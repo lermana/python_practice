@@ -41,8 +41,11 @@ class Fraction:
     def _real(self):
         return self.numerator / self.denomenator
 
+    def _invert(self):
+        return Fraction(self.denomenator, self.numerator)
+
     def __neg__(self):
-        return - 1 * self
+        return self.__mul__(-1)
 
     def __add__(self, other):
         if isinstance(other, Fraction):
@@ -53,18 +56,18 @@ class Fraction:
             if other == 0:
                 return self
             else:
-                return self + Fraction(other, 1)
+                return self.__add__(Fraction(other, 1))
         else:
             raise ValueError('Must pass Fractions or Fraction & int')
 
     def __radd__(self, other):
-        return self + other
+        return self.__add__(other)
 
     def __sub__(self, other):
-        return self + -1 * other   
+        return self.__add__(other.__neg__())   
 
     def __rsub__(self, other):
-        return other  + -1 * self 
+        return self.__neg__().__add__(other)
 
     def __mul__(self, other):
         if isinstance(other, Fraction):
@@ -74,26 +77,26 @@ class Fraction:
             if other == 0:
                 return 0
             else:
-                return self * Fraction(other, 1)
+                return self.__mul__(Fraction(other, 1))
         else:
             raise ValueError('Must pass Fractions or Fraction & int')
 
     def __rmul__(self, other):
-        return self * other
+        return self.__mul__(other)
 
     def __truediv__(self, other):
         if isinstance(other, Fraction):
-            return self * Fraction(other.denomenator, other.numerator)  
+            return self.__mul__(other._invert())  
         elif isinstance(other, int):
             if other == 0:
                 raise ValueError('Can\'t divide by zero')
             else:
-                return self * Fraction(1, other)
+                return self.__mul__(Fraction(1, other))
         else:
             raise ValueError('Must pass Fractions or Fraction & int')
 
     def __rtruediv__(self, other):
-        return Fraction(self.denomenator, self.numerator) * other
+        return self._invert().__mul__(other)
 
     def _compare(op_func):
         def operate(self, other):
