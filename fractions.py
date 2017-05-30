@@ -1,6 +1,11 @@
 import operator
 
+
+
 def gcd(m, n):
+    """recursively calculate and then return GCD of the 2 
+    provided numbers. not the most efficient, and not 
+    robust in the slightest, but nice & simple."""
     def recurse(m, n):
         if m % n == 0:
             return n
@@ -9,56 +14,171 @@ def gcd(m, n):
     return recurse(m, n)
 
 
+def fraction_arithmetic(operation):
+    """wrapper for arithmetic operations that catches TypeErrors."""
+    def handle_value_errors(fraction, other):
+        if not (isinstance(other, Fraction) or isinstance(other, int)):
+            raise TypeError('Must pass Fractions or Fraction & int')
+        else:
+            return operation(fraction, other)
+    return handle_value_errors
+
+
+def scaled_numerators(fraction_a, fraction_b):
+    """allows for easily summing or comparing the numerators
+    of 2 Fraction objects."""
+    return (fraction_a.numerator * fraction_b.denominator,
+            fraction_b.numerator * fraction_a.denominator)
+
+
+def add_fractions(fraction_a, fraction_b):
+    """returns new Fraction that is the sum of the 2 passed
+    Fraction objects.""" 
+    return Fraction(sum(scaled_numerators(fraction_a, fraction_b)),
+                    fraction_a.denominator * fraction_b.denominator)
+
+
+def add_fraction_int(fraction, other):
+    """returns sum of Fraction object & int, as new Fraction."""
+    return Fraction(fraction.numerator + other * fraction.denominator,
+                    fraction.denominator)
+
+
+@fraction_arithmetic
+def fraction_addition(fraction, other):
+    """provids handling of TypeErrors, as well as both Fraction
+    to Fraction and Fraction to int addition."""
+    if isinstance(other, Fraction):
+        return add_fractions(fraction, other)
+    else:
+        return add_fraction_int(fraction, other)
+
+
+def multiply_fractions(fraction_a, fraction_b):
+    """returns new Fraction that is the product of the 2 passed
+    Fraction objects.""" 
+    return Fraction(fraction_a.numerator * fraction_b.numerator, 
+                    fraction_a.denominator * fraction_b.denominator)
+
+
+def multiply_fraction_int(fraction, other):
+    """returns product of Fraction object & int, as new Fraction."""
+    return Fraction(fraction.numerator * other,
+                    fraction.denominator)
+
+
+@fraction_arithmetic
+def fraction_multiplication(fraction, other):
+    """provids handling of TypeErrors, as well as both Fraction
+    to Fraction and Fraction to int multiplication."""
+    if isinstance(other, Fraction):
+        return multiply_fractions(fraction, other)
+    else:
+        return multiply_fraction_int(fraction, other)
+
+
+def divide_fractions(fraction_a, fraction_b):
+    """returns quotient of 2 passed Fraction objects."""
+    return multiply_fractions(fraction_a, fraction_b._invert())
+
+
+def divide_fraction_int(fraction, other):
+    """returns Fraction scaled downwards by passed int."""
+    return Fraction(fraction.numerator, fraction.denominator * other)
+
+
+@fraction_arithmetic
+def fraction_division(fraction, other):
+    """provids handling of TypeErrors, as well as both Fraction
+    to Fraction and Fraction to int division."""
+    if isinstance(other, Fraction):
+        return divide_fractions(fraction, other)
+    else:
+        return divide_fraction_int(fraction, other)
+
+
+def compare_fractions(op_func):
+    """wrapper for comparison operators. does not protect against
+    issues arising from comparing a Fraction to a non-numeric type."""
+    def operate(self, other):
+        if isinstance(other, Fraction):
+            return op_func(*scaled_numerators(self, other))
+        else:
+            return op_func(self._real(), other)
+    return operate
+
+
+
 class Fraction:   
+    """constructor takes numerator and denominator as arguments and retains 
+    those values in lowest terms.
     
-    def __new__(cls, numerator, denomenator):
+    constructor is robust with respect to handling of TypeErrors and 
+    ZeroDivisionErrors. If a whole number is passed to constructor, a Fraction 
+    object will not be created and instead the corresponding integer will be 
+    returned. Only integers can be passed to the constructor; it cannot handle
+    being passed Fraction objects, nor can it translate rational floating point
+    numbers to fractions.
+
+    the following arithmetic operations have been implmented for use with either
+    other Fraction objects or integers:
+        addition
+        subtraction
+        multiplication
+        division
+
+    and the following comparison operations have been implemented for use with
+    other Fraction objects, integers, and floating point numbers (these 
+    implementations may still run with other data types, which may or may
+    not cause you problems):
+        less than
+        less than or equal to
+        equal to
+        not equal to
+        greater than
+        greater than or equal to
+
+    the _real() and _invert() methods return, respectively, the real number representation
+    and multiplicative inverse of the Fraction object."""
+
+    def __new__(cls, numerator, denominator):
+        if not (isinstance(numerator, int) 
+                    and isinstance(denominator, int)):
+            raise TypeError('Fraction constructors must both be integers')
+        if denominator == 0:
+            raise ZeroDivisionError('Fraction denominator must be non-zero int')
         if numerator == 0:
             return 0
+        elif numerator % denominator == 0:
+            return numerator // denominator
         else:
             return super(Fraction, cls).__new__(cls)
 
-    def __init__(self, numerator, denomenator):
-        if not (isinstance(numerator, int) 
-                    and isinstance(denomenator, int)):
-            raise ValueError('Fraction constructors must both be integers')
+    def __init__(self, numerator, denominator):
+        if denominator < 0 and numerator >= 0:
+            numerator, denominator = -1 * numerator, -1 * denominator
         
-        if denomenator == 0:
-            raise ValueError('Fraction denomenator must be non-zero int')
-
-        if denomenator < 0 and numerator >= 0:
-            numerator, denomenator = -1 * numerator, -1 * denomenator
-        
-        common = gcd(numerator, denomenator)
+        common = gcd(numerator, denominator)
         self.numerator = numerator // common
-        self.denomenator = denomenator // common
+        self.denominator = denominator // common
 
     def __str__(self):
-        return "{} / {}".format(self.numerator, self.denomenator)
+        return "{} / {}".format(self.numerator, self.denominator)
     
     def __repr__(self):
         return self.__str__()
 
-    def _real(self):
-        return self.numerator / self.denomenator
-
-    def _invert(self):
-        return Fraction(self.denomenator, self.numerator)
-
     def __neg__(self):
         return self.__mul__(-1)
 
+    def _real(self):
+        return self.numerator / self.denominator
+
+    def _invert(self):
+        return Fraction(self.denominator, self.numerator)
+
     def __add__(self, other):
-        if isinstance(other, Fraction):
-            return Fraction(self.numerator * other.denomenator 
-                               + other.numerator * self.denomenator, 
-                            self.denomenator * other.denomenator)
-        elif isinstance(other, int):
-            if other == 0:
-                return self
-            else:
-                return self.__add__(Fraction(other, 1))
-        else:
-            raise ValueError('Must pass Fractions or Fraction & int')
+        return fraction_addition(self, other)
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -70,65 +190,37 @@ class Fraction:
         return self.__neg__().__add__(other)
 
     def __mul__(self, other):
-        if isinstance(other, Fraction):
-            return Fraction(self.numerator * other.numerator, 
-                            self.denomenator * other.denomenator)    
-        elif isinstance(other, int):
-            if other == 0:
-                return 0
-            else:
-                return self.__mul__(Fraction(other, 1))
-        else:
-            raise ValueError('Must pass Fractions or Fraction & int')
+        return fraction_multiplication(self, other)
 
     def __rmul__(self, other):
         return self.__mul__(other)
 
     def __truediv__(self, other):
-        if isinstance(other, Fraction):
-            return self.__mul__(other._invert())  
-        elif isinstance(other, int):
-            if other == 0:
-                raise ValueError('Can\'t divide by zero')
-            else:
-                return self.__mul__(Fraction(1, other))
-        else:
-            raise ValueError('Must pass Fractions or Fraction & int')
+        return fraction_division(self, other)
 
     def __rtruediv__(self, other):
         return self._invert().__mul__(other)
 
-    def _compare(op_func):
-        def operate(self, other):
-            if isinstance(other, Fraction):
-                return op_func(self.numerator 
-                                    * other.denomenator,
-                                other.numerator 
-                                    * self.denomenator)
-            else:
-                return op_func(self._real(), other)
-        return operate
-
-    @_compare
+    @compare_fractions
     def __lt__(self, other):
          return operator.lt(self, other)
 
-    @_compare
+    @compare_fractions
     def __le__(self, other):
         return operator.le(self, other)
     
-    @_compare
+    @compare_fractions
     def __eq__(self, other):
         return operator.eq(self, other)
 
-    @_compare
+    @compare_fractions
     def __ne__(self, other):
         return operator.ne(self, other)
 
-    @_compare
+    @compare_fractions
     def __gt__(self, other):
         return operator.gt(self, other)
 
-    @_compare
+    @compare_fractions
     def __ge__(self, other):
         return operator.ge(self, other)
