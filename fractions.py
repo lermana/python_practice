@@ -34,7 +34,7 @@ def _scaled_numerators(fraction_a, fraction_b):
 def _add_fractions(fraction_a, fraction_b):
     """returns new Fraction that is the sum of the 2 passed
     Fraction objects.""" 
-    return Fraction(sum(scaled_numerators(fraction_a, fraction_b)),
+    return Fraction(sum(_scaled_numerators(fraction_a, fraction_b)),
                     fraction_a.denominator * fraction_b.denominator)
 
 
@@ -49,9 +49,9 @@ def _fraction_addition(fraction, other):
     """provids handling of TypeErrors, as well as both Fraction
     to Fraction and Fraction to int addition."""
     if isinstance(other, Fraction):
-        return add_fractions(fraction, other)
+        return _add_fractions(fraction, other)
     else:
-        return add_fraction_int(fraction, other)
+        return _add_fraction_int(fraction, other)
 
 
 def _multiply_fractions(fraction_a, fraction_b):
@@ -72,14 +72,14 @@ def _fraction_multiplication(fraction, other):
     """provids handling of TypeErrors, as well as both Fraction
     to Fraction and Fraction to int multiplication."""
     if isinstance(other, Fraction):
-        return multiply_fractions(fraction, other)
+        return _multiply_fractions(fraction, other)
     else:
-        return multiply_fraction_int(fraction, other)
+        return _multiply_fraction_int(fraction, other)
 
 
 def _divide_fractions(fraction_a, fraction_b):
     """returns quotient of 2 passed Fraction objects."""
-    return multiply_fractions(fraction_a, fraction_b._invert())
+    return _multiply_fractions(fraction_a, fraction_b._invert())
 
 
 def _divide_fraction_int(fraction, other):
@@ -92,9 +92,9 @@ def _fraction_division(fraction, other):
     """provids handling of TypeErrors, as well as both Fraction
     to Fraction and Fraction to int division."""
     if isinstance(other, Fraction):
-        return divide_fractions(fraction, other)
+        return _divide_fractions(fraction, other)
     else:
-        return divide_fraction_int(fraction, other)
+        return _divide_fraction_int(fraction, other)
 
 
 def _compare_fractions(op_func):
@@ -102,7 +102,7 @@ def _compare_fractions(op_func):
     issues arising from comparing a Fraction to a non-numeric type."""
     def operate(self, other):
         if isinstance(other, Fraction):
-            return op_func(*scaled_numerators(self, other))
+            return op_func(*_scaled_numerators(self, other))
         else:
             return op_func(self._real(), other)
     return operate
@@ -142,6 +142,12 @@ class Fraction:
     and multiplicative inverse of the Fraction object."""
 
     def __new__(cls, numerator, denominator):
+        if not (isinstance(numerator, int) 
+                    and isinstance(denominator, int)):
+            raise TypeError('Fraction constructors must both be integers')
+        if denominator == 0:
+            raise ZeroDivisionError('Fraction denominator must be non-zero int')
+        
         if numerator == 0:
             return 0
         elif numerator % denominator == 0:
@@ -158,7 +164,7 @@ class Fraction:
 
         if denominator < 0 and numerator >= 0:
             numerator, denominator = -1 * numerator, -1 * denominator
-        common = gcd(numerator, denominator)
+        common = _gcd(numerator, denominator)
 
         self.numerator = numerator // common
         self.denominator = denominator // common
@@ -179,7 +185,7 @@ class Fraction:
         return Fraction(self.denominator, self.numerator)
 
     def __add__(self, other):
-        return fraction_addition(self, other)
+        return _fraction_addition(self, other)
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -191,13 +197,13 @@ class Fraction:
         return self.__neg__().__add__(other)
 
     def __mul__(self, other):
-        return fraction_multiplication(self, other)
+        return _fraction_multiplication(self, other)
 
     def __rmul__(self, other):
         return self.__mul__(other)
 
     def __truediv__(self, other):
-        return fraction_division(self, other)
+        return _fraction_division(self, other)
 
     def __rtruediv__(self, other):
         return self._invert().__mul__(other)
