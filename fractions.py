@@ -153,7 +153,7 @@ class Fraction:
         if not (isinstance(numerator, int) 
                     and isinstance(denominator, int)):
             raise TypeError('Fraction constructors must both be integers')
-         if denominator == 0:
+        if denominator == 0:
             raise ZeroDivisionError('Fraction denominator must be non-zero int')
 
         if denominator < 0 and numerator >= 0:
