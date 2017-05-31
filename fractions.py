@@ -2,7 +2,7 @@ import operator
 
 
 
-def gcd(m, n):
+def _gcd(m, n):
     """recursively calculate and then return GCD of the 2 
     provided numbers. not the most efficient, and not 
     robust in the slightest, but nice & simple."""
@@ -14,7 +14,7 @@ def gcd(m, n):
     return recurse(m, n)
 
 
-def fraction_arithmetic(operation):
+def _fraction_arithmetic(operation):
     """wrapper for arithmetic operations that catches TypeErrors."""
     def handle_value_errors(fraction, other):
         if not (isinstance(other, Fraction) or isinstance(other, int)):
@@ -24,28 +24,28 @@ def fraction_arithmetic(operation):
     return handle_value_errors
 
 
-def scaled_numerators(fraction_a, fraction_b):
+def _scaled_numerators(fraction_a, fraction_b):
     """allows for easily summing or comparing the numerators
     of 2 Fraction objects."""
     return (fraction_a.numerator * fraction_b.denominator,
             fraction_b.numerator * fraction_a.denominator)
 
 
-def add_fractions(fraction_a, fraction_b):
+def _add_fractions(fraction_a, fraction_b):
     """returns new Fraction that is the sum of the 2 passed
     Fraction objects.""" 
     return Fraction(sum(scaled_numerators(fraction_a, fraction_b)),
                     fraction_a.denominator * fraction_b.denominator)
 
 
-def add_fraction_int(fraction, other):
+def _add_fraction_int(fraction, other):
     """returns sum of Fraction object & int, as new Fraction."""
     return Fraction(fraction.numerator + other * fraction.denominator,
                     fraction.denominator)
 
 
-@fraction_arithmetic
-def fraction_addition(fraction, other):
+@_fraction_arithmetic
+def _fraction_addition(fraction, other):
     """provids handling of TypeErrors, as well as both Fraction
     to Fraction and Fraction to int addition."""
     if isinstance(other, Fraction):
@@ -54,21 +54,21 @@ def fraction_addition(fraction, other):
         return add_fraction_int(fraction, other)
 
 
-def multiply_fractions(fraction_a, fraction_b):
+def _multiply_fractions(fraction_a, fraction_b):
     """returns new Fraction that is the product of the 2 passed
     Fraction objects.""" 
     return Fraction(fraction_a.numerator * fraction_b.numerator, 
                     fraction_a.denominator * fraction_b.denominator)
 
 
-def multiply_fraction_int(fraction, other):
+def _multiply_fraction_int(fraction, other):
     """returns product of Fraction object & int, as new Fraction."""
     return Fraction(fraction.numerator * other,
                     fraction.denominator)
 
 
-@fraction_arithmetic
-def fraction_multiplication(fraction, other):
+@_fraction_arithmetic
+def _fraction_multiplication(fraction, other):
     """provids handling of TypeErrors, as well as both Fraction
     to Fraction and Fraction to int multiplication."""
     if isinstance(other, Fraction):
@@ -77,18 +77,18 @@ def fraction_multiplication(fraction, other):
         return multiply_fraction_int(fraction, other)
 
 
-def divide_fractions(fraction_a, fraction_b):
+def _divide_fractions(fraction_a, fraction_b):
     """returns quotient of 2 passed Fraction objects."""
     return multiply_fractions(fraction_a, fraction_b._invert())
 
 
-def divide_fraction_int(fraction, other):
+def _divide_fraction_int(fraction, other):
     """returns Fraction scaled downwards by passed int."""
     return Fraction(fraction.numerator, fraction.denominator * other)
 
 
-@fraction_arithmetic
-def fraction_division(fraction, other):
+@_fraction_arithmetic
+def _fraction_division(fraction, other):
     """provids handling of TypeErrors, as well as both Fraction
     to Fraction and Fraction to int division."""
     if isinstance(other, Fraction):
@@ -97,7 +97,7 @@ def fraction_division(fraction, other):
         return divide_fraction_int(fraction, other)
 
 
-def compare_fractions(op_func):
+def _compare_fractions(op_func):
     """wrapper for comparison operators. does not protect against
     issues arising from comparing a Fraction to a non-numeric type."""
     def operate(self, other):
@@ -142,11 +142,6 @@ class Fraction:
     and multiplicative inverse of the Fraction object."""
 
     def __new__(cls, numerator, denominator):
-        if not (isinstance(numerator, int) 
-                    and isinstance(denominator, int)):
-            raise TypeError('Fraction constructors must both be integers')
-        if denominator == 0:
-            raise ZeroDivisionError('Fraction denominator must be non-zero int')
         if numerator == 0:
             return 0
         elif numerator % denominator == 0:
@@ -155,10 +150,16 @@ class Fraction:
             return super(Fraction, cls).__new__(cls)
 
     def __init__(self, numerator, denominator):
+        if not (isinstance(numerator, int) 
+                    and isinstance(denominator, int)):
+            raise TypeError('Fraction constructors must both be integers')
+         if denominator == 0:
+            raise ZeroDivisionError('Fraction denominator must be non-zero int')
+
         if denominator < 0 and numerator >= 0:
             numerator, denominator = -1 * numerator, -1 * denominator
-        
         common = gcd(numerator, denominator)
+
         self.numerator = numerator // common
         self.denominator = denominator // common
 
@@ -201,26 +202,26 @@ class Fraction:
     def __rtruediv__(self, other):
         return self._invert().__mul__(other)
 
-    @compare_fractions
+    @_compare_fractions
     def __lt__(self, other):
          return operator.lt(self, other)
 
-    @compare_fractions
+    @_compare_fractions
     def __le__(self, other):
         return operator.le(self, other)
     
-    @compare_fractions
+    @_compare_fractions
     def __eq__(self, other):
         return operator.eq(self, other)
 
-    @compare_fractions
+    @_compare_fractions
     def __ne__(self, other):
         return operator.ne(self, other)
 
-    @compare_fractions
+    @_compare_fractions
     def __gt__(self, other):
         return operator.gt(self, other)
 
-    @compare_fractions
+    @_compare_fractions
     def __ge__(self, other):
         return operator.ge(self, other)
