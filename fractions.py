@@ -190,6 +190,7 @@ class Fraction:
     def __radd__(self, other):
         return self.__add__(other)
 
+    @_fraction_arithmetic
     def __sub__(self, other):
         return self.__add__(other.__neg__())   
 
